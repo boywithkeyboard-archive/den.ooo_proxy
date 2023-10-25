@@ -78,8 +78,6 @@ export async function createProxy({
           if (!aliases[name])
             return notFound
 
-          wasAlias = true
-
           p = p.join('/').replace(name, aliases[name]).split('/')
 
           return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
