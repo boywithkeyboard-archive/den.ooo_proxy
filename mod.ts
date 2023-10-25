@@ -53,8 +53,6 @@ export async function createProxy({
         status: 404
       })
 
-      let wasAlias = false
-
       if (p[0] === 'gh' || p[0] === 'gl') {
         if (p[0] === 'gh' && !gh || p[0] === 'gl' && !gl)
           return notFound
@@ -126,9 +124,6 @@ export async function createProxy({
       // resolve imports from import map
       if (importMapResolution && /^.*\.(ts|js|mjs)$/.test(p.join('/')))
         content = await resolveImports(p, content)
-
-      if (wasAlias)
-        content = rewr(p, content)
 
       let typeFile: string | undefined
 
