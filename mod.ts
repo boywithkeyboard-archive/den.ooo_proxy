@@ -2,7 +2,6 @@ import { FileData, getFileFromRepository } from './getFileFromRepository.ts'
 import { getLatestVersion } from './getLatestVersion.ts'
 import { isDev } from './isDev.ts'
 import { resolveImports } from './resolveImports.ts'
-import { rewriteImports } from './rewriteImports.ts'
 
 export type DataCache = {
   /**
@@ -68,7 +67,7 @@ export async function createProxy({
         status: 404
       })
 
-      let isAlias = false
+      let str = p.join('/')
 
       if (p[0] === 'gh' || p[0] === 'gl') {
         if (p[0] === 'gh' && !gh || p[0] === 'gl' && !gl)
@@ -97,8 +96,6 @@ export async function createProxy({
 
           p = p.join('/').replace(name, aliases[name]).split('/')
 
-          isAlias = true
-
           // return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
         // includes no version tag
         } else {
@@ -122,13 +119,32 @@ export async function createProxy({
       if (/^.*\.(ts|js|mjs|json|wasm)$/.test(p.join('/')) === false) {
         p.push('mod.ts')
 
+        str = [...str.split('/'), 'mod.ts'].join('/')
+
         result = await getFileFromRepository(p)
 
-        if (!result.content) {
-          p[p.length - 1] = 'mod.js'
+        if (result.content)
+          return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${str}`, 307)
 
-          result = await getFileFromRepository(p)
-        }
+        // if (!result.content) {
+        //   p[p.length - 1] = 'mod.js'
+
+        //   str = [...str.split('/').slice(0, str.split('/').length - 1), 'mod.js'].join('/')
+
+        //   result = await getFileFromRepository(p)
+
+        //   if (result.content)
+        //     return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${str}`, 307)
+        // }
+
+        p[p.length - 1] = 'mod.js'
+
+        str = [...str.split('/').slice(0, str.split('/').length - 1), 'mod.js'].join('/')
+
+        // result = await getFileFromRepository(p)
+
+        // if (result.content)
+        return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${str}`, 307)
       } else {
         result = await getFileFromRepository(p)
       }
@@ -137,9 +153,6 @@ export async function createProxy({
 
       if (!content)
         return notFound
-
-      if (isAlias)
-        content = rewriteImports(p, content)
 
       // resolve imports from import map
       if (importMapResolution && /^.*\.(ts|js|mjs)$/.test(p.join('/')))
