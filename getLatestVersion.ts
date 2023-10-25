@@ -47,7 +47,7 @@ export async function getLatestVersion(
     } else {
       return 'main'
     }
-  } catch (err) {
+  } catch (_err) {
     return 'main'
   }
 }

@@ -2,10 +2,10 @@ import { FileData, getFileFromRepository } from './getFileFromRepository.ts'
 import { getLatestVersion } from './getLatestVersion.ts'
 import { isDev } from './isDev.ts'
 import { resolveImports } from './resolveImports.ts'
-import { rewriteImports } from './rewriteImports.ts'
 
 export async function createProxy({
   // cache,
+  domain = 'den.ooo',
   port = Deno.env.get('PORT') ? parseInt(Deno.env.get('PORT') as string) : 3000,
   registries: {
     gh = true,
@@ -21,6 +21,7 @@ export async function createProxy({
   //   set: (key: string, value: string) => Promise<void> | void
   //   get: (key: string) => Promise<string | undefined> | (string | undefined)
   // }
+  domain?: string
   port?: number
   registries?: {
     gh?: boolean
@@ -66,7 +67,7 @@ export async function createProxy({
 
           p[2] += `@${latest}`
 
-          return Response.redirect(`${isDev ? 'http://localhost:3000' : 'https://den.ooo'}/${p.join('/')}`, 307)
+          return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
         }
       } else {
         if (/^\/[^\/]+(@[^\/]+)?(\/[^\/]+)*$/.test(url.pathname) === false)
@@ -82,6 +83,8 @@ export async function createProxy({
           wasAlias = true
 
           p = p.join('/').replace(name, aliases[name]).split('/')
+
+          return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
         // includes no version tag
         } else {
           if (!aliases[p[0]])
@@ -91,7 +94,11 @@ export async function createProxy({
 
           p[0] += `@${latest}`
 
-          return Response.redirect(`${isDev ? 'http://localhost:3000' : 'https://den.ooo'}/${p.join('/')}`, 307)
+          const name = p[0].split('@')[0]
+
+          p = p.join('/').replace(name, aliases[name]).split('/')
+
+          return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
         }
       }
 
@@ -120,10 +127,8 @@ export async function createProxy({
       if (importMapResolution && /^.*\.(ts|js|mjs)$/.test(p.join('/')))
         content = await resolveImports(p, content)
 
-      console.log(wasAlias)
-
       if (wasAlias)
-        content = rewriteImports(p, content)
+        content = rewr(p, content)
 
       let typeFile: string | undefined
 
@@ -135,12 +140,12 @@ export async function createProxy({
           p[p.length - 1] = p[p.length - 1].slice(0, p[p.length - 1].length - 3) + '.d.ts'
       
           if ((await getFileFromRepository(p)).content)
-            typeFile = 'https://den.ooo/' + p.join('/')
+            typeFile = `https://${domain}/` + p.join('/')
         } else if (p[p.length - 1].endsWith('.mjs')) {
           p[p.length - 1] = p[p.length - 1].slice(0, p[p.length - 1].length - 4) + '.d.ts'
       
           if ((await getFileFromRepository(p)).content)
-            typeFile = 'https://den.ooo/' + p.join('/')
+            typeFile = `https://${domain}/` + p.join('/')
         }
       }
 
@@ -159,5 +164,5 @@ export async function createProxy({
   })
     .finished
 
-  console.info(`den.ooo listening on :${port}`)
+  console.info(`den.ooo is listening on :${port}`)
 }
