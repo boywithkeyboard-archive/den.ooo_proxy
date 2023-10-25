@@ -6,7 +6,7 @@ import { rewriteImports } from './rewriteImports.ts'
 
 export async function createProxy({
   // cache,
-  port = 3000,
+  port = Deno.env.get('PORT') ? parseInt(Deno.env.get('PORT') as string) : 3000,
   registries: {
     gh = true,
     gl = true
@@ -33,11 +33,18 @@ export async function createProxy({
   }
 } = {}) {
   await Deno.serve({
+    hostname: '0.0.0.0',
     port
   }, async req => {
     try {
       const url = new URL(req.url)
       , path = url.pathname.slice(1)
+
+      if (path === '')
+        return new Response('POWERED BY DEN.OOO | LEARN MORE: https://github.com/dendotooo/template')
+
+      if (path === 'health')
+        return new Response('OK')
 
       let p = path.split('/')
 
