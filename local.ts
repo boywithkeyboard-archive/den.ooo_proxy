@@ -1,3 +1,9 @@
 import { createProxy } from './mod.ts'
 
-createProxy({})
+createProxy({
+  features: {
+    aliases: {
+      esbuild: 'gh/esbuild/deno-esbuild'
+    }
+  }
+})

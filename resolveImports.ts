@@ -54,7 +54,7 @@ export async function resolveImports(p: string[], content: string) {
     const result = resolveImportsInFile(content, importMap)
 
     return result
-  } catch (err) {
+  } catch (_err) {
     return content
   }
 }
