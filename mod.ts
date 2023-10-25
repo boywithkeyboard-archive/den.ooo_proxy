@@ -2,9 +2,18 @@ import { FileData, getFileFromRepository } from './getFileFromRepository.ts'
 import { getLatestVersion } from './getLatestVersion.ts'
 import { isDev } from './isDev.ts'
 import { resolveImports } from './resolveImports.ts'
+import { rewriteImports } from './rewriteImports.ts'
+
+export type DataCache = {
+  /**
+   * @param maxAge (seconds)
+   */
+  set: (key: string, value: string, maxAge: number) => Promise<void> | void
+  get: (key: string) => Promise<string | undefined> | (string | undefined)
+}
 
 export async function createProxy({
-  // cache,
+  cache,
   domain = 'den.ooo',
   port = Deno.env.get('PORT') ? parseInt(Deno.env.get('PORT') as string) : 3000,
   registries: {
@@ -17,10 +26,7 @@ export async function createProxy({
     importMapResolution = true
   } = {}
 }: {
-  // cache?: {
-  //   set: (key: string, value: string) => Promise<void> | void
-  //   get: (key: string) => Promise<string | undefined> | (string | undefined)
-  // }
+  cache?: DataCache
   domain?: string
   port?: number
   registries?: {
@@ -41,6 +47,15 @@ export async function createProxy({
       const url = new URL(req.url)
       , path = url.pathname.slice(1)
 
+      // just a stupid polyfill which does nothing
+      cache ??= {
+        set() {},
+
+        get() {
+          return undefined
+        }
+      }
+
       if (path === '')
         return new Response('POWERED BY DEN.OOO | LEARN MORE: https://github.com/dendotooo/template')
 
@@ -53,6 +68,8 @@ export async function createProxy({
         status: 404
       })
 
+      let isAlias = false
+
       if (p[0] === 'gh' || p[0] === 'gl') {
         if (p[0] === 'gh' && !gh || p[0] === 'gl' && !gl)
           return notFound
@@ -61,7 +78,7 @@ export async function createProxy({
           return notFound
 
         if (!p[2].includes('@')) {
-          const latest = await getLatestVersion(p.slice(0, 3).join('/'))
+          const latest = await getLatestVersion(cache, p.slice(0, 3).join('/'))
 
           p[2] += `@${latest}`
 
@@ -80,19 +97,21 @@ export async function createProxy({
 
           p = p.join('/').replace(name, aliases[name]).split('/')
 
-          return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
+          isAlias = true
+
+          // return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
         // includes no version tag
         } else {
           if (!aliases[p[0]])
             return notFound
 
-          const latest = await getLatestVersion(aliases[p[0]])
+          const latest = await getLatestVersion(cache, aliases[p[0]])
 
           p[0] += `@${latest}`
 
-          const name = p[0].split('@')[0]
+          // const name = p[0].split('@')[0]
 
-          p = p.join('/').replace(name, aliases[name]).split('/')
+          // p = p.join('/').replace(name, aliases[name]).split('/')
 
           return Response.redirect(`${isDev ? `http://localhost:${port}` : `https://${domain}`}/${p.join('/')}`, 307)
         }
@@ -118,6 +137,9 @@ export async function createProxy({
 
       if (!content)
         return notFound
+
+      if (isAlias)
+        content = rewriteImports(p, content)
 
       // resolve imports from import map
       if (importMapResolution && /^.*\.(ts|js|mjs)$/.test(p.join('/')))
