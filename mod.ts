@@ -22,7 +22,7 @@ export async function createProxy({
     gl = true
   } = {},
   features: {
-    aliases = {},
+    aliases,
     typesHeader = true,
     importMapResolution = true
   } = {}
@@ -56,6 +56,17 @@ export async function createProxy({
           return undefined
         }
       }
+
+      if (path === 'health' || path === '' && url.searchParams.has('health'))
+        return new Response(null)
+
+      if (aliases && path === '' && url.searchParams.has('aliases'))
+        return Response.json(aliases, {
+          headers: {
+            'cache-control': `public, max-age=${300}`,
+            'content-type': 'application/json; charset=utf-8'
+          }
+        })
 
       if (path === '')
         return new Response(`
@@ -106,8 +117,7 @@ export async function createProxy({
         //   ]).join('\n')
         // )
 
-      if (path === 'health')
-        return new Response('OK')
+      aliases ??= {}
 
       let p = path.split('/')
 
