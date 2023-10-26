@@ -1,3 +1,5 @@
+import { decodeBase64 } from 'https://deno.land/std@0.204.0/encoding/base64.ts'
+import * as asciiArt from './asciiArt.ts'
 import { FileData, getFileFromRepository } from './getFileFromRepository.ts'
 import { getLatestVersion } from './getLatestVersion.ts'
 import { isDev } from './isDev.ts'
@@ -56,7 +58,53 @@ export async function createProxy({
       }
 
       if (path === '')
-        return new Response('POWERED BY DEN.OOO | LEARN MORE: https://github.com/dendotooo/template')
+        return new Response(`
+          <html>
+            <head>
+              <meta name="color-scheme" content="dark">
+
+              <style>
+                body {
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-direction: column;
+                  padding: 30px 0;
+                }
+
+                pre {
+                  margin: 0;
+                  margin-top: 10px;
+                }
+
+                pre:nth-child(2) {
+                  margin-top: 30px;
+                }
+              </style>
+            </head>
+
+            <body>
+              <pre>${new TextDecoder().decode(decodeBase64(asciiArt.logo))}</pre><br><br><br>
+              <pre>Powered by den.ooo - https://github.com/dendotooo</pre>
+            </body>
+          </html>
+        `, {
+          headers: {
+            'cache-control': `public, max-age=${300}`,
+            'content-type': 'text/html; charset=utf-8'
+          }
+        })
+        
+        // return new Response(
+        //   center([
+        //     ...new TextDecoder().decode(decodeBase64(asciiArt.logo)).split('\n'),
+        //     '',
+        //     '',
+        //     ...new TextDecoder().decode(decodeBase64(asciiArt.name)).split('\n'),
+        //     '',
+        //     'Powered by den.ooo - Learn more: https://github.com/dendotooo'
+        //   ]).join('\n')
+        // )
 
       if (path === 'health')
         return new Response('OK')
