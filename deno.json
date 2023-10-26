@@ -6,7 +6,7 @@
     "typebox/value": "https://esm.sh/@sinclair/typebox@0.31.18/value?target=es2022"
   },
   "tasks": {
-    "dev": "export STAGE=development && deno run -A local.ts"
+    "dev": "export STAGE=development && deno run -A --watch local.ts"
   },
   "lock": false
 }
