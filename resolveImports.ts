@@ -9,32 +9,30 @@ import { getFileFromRepository } from './getFileFromRepository.ts'
  * $4 = module identifier\
  * $5 = quotes used (either ' or ")
  */
+// const REGEX =
+//   /import(?:(?:(?:[ \n\t]+([^ *\n\t\{\},]+)[ \n\t]*(?:,|[ \n\t]+))?([ \n\t]*\{(?:[ \n\t]*[^ \n\t"'\{\}]+[ \n\t]*,?)+\})?[ \n\t]*)|[ \n\t]*\*[ \n\t]*as[ \n\t]+([^ \n\t\{\}]+)[ \n\t]+)from[ \n\t]*(?:['"])([^'"\n]+)(['"])/g
+
 const REGEX =
-  /import(?:(?:(?:[ \n\t]+([^ *\n\t\{\},]+)[ \n\t]*(?:,|[ \n\t]+))?([ \n\t]*\{(?:[ \n\t]*[^ \n\t"'\{\}]+[ \n\t]*,?)+\})?[ \n\t]*)|[ \n\t]*\*[ \n\t]*as[ \n\t]+([^ \n\t\{\}]+)[ \n\t]+)from[ \n\t]*(?:['"])([^'"\n]+)(['"])/g
+  /(?:(?<=(?:import|export)[^`'"]*from\s+[`'"])(?<path1>[^`'"]+)(?=(?:'|"|`)))|(?:\b(?:import|export)(?:\s+|\s*\(\s*)[`'"](?<path2>[^`'"]+)[`'"])/g
 
 function resolveImportsInFile(
   str: string,
   importMap: Record<string, string>,
 ): string {
-  try {
-    for (const match of str.matchAll(REGEX)) {
-      const identifier = match[4]
-      const quote = match[5] as '\'' | '"'
+  return str.replace(REGEX, str => {
+    if (importMap[str])
+      return str.replace(str, importMap[str])
 
-      if (importMap[identifier]) {
-        str = str.replace(
-          `from ${quote}${identifier}${quote}`,
-          `from ${quote}${importMap[identifier]}${quote}`,
-        )
-
+    for (const key in importMap) {
+      if (!key.endsWith('/'))
         continue
-      }
+
+      if (str.startsWith(key))
+        return str.replace(key, importMap[key])
     }
 
     return str
-  } catch (_err) {
-    return str
-  }
+  })
 }
 
 export async function resolveImports(p: string[], content: string) {
@@ -46,6 +44,7 @@ export async function resolveImports(p: string[], content: string) {
 
     const denoConfig = JSON.parse(r.content)
 
+    // @ts-ignore: weird esm.sh issue
     if (!denoConfig.imports || !Value.Check(Type.Record(Type.String(), Type.String()), denoConfig.imports))
       throw ''
 
