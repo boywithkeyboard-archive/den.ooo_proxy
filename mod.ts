@@ -131,7 +131,7 @@ export async function createProxy({
         if (p[0] === 'gh' && !gh || p[0] === 'gl' && !gl)
           return notFound
 
-        if (/^\/(gh|gl)?\/[^\/]+\/[^\/]+(@[^\/]+)?(\/[^\/]+)*$/.test(url.pathname) === false)
+        if (/^\/(gh|gl)\/[^\/]+\/[^\/]+(@[^\/]+)?(\/[^\/]+)*$/.test(url.pathname) === false)
           return notFound
 
         if (!p[2].includes('@')) {
