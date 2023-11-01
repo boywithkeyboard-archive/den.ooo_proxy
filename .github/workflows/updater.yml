@@ -23,7 +23,7 @@ jobs:
 
       - name: Run update
         run: |
-          deno run -A https://den.ooo/updater@v0.10.0 -c
+          deno run -A https://den.ooo/updater -c
           CHANGELOG=$(cat updates_changelog.md)
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG" >> $GITHUB_ENV
