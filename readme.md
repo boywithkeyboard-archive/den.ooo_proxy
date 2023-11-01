@@ -2,7 +2,11 @@
 
 ### Disclaimer
 
-This project is licensed under the [AGPL-3.0 license](https://github.com/dendotooo/proxy/blob/main/license).
+> [!NOTE]
+> This is the open source release of our proxy and therefore may differ from the implementation we use for den.ooo with certain features missing. If you want access to the full version, please message us on Discord so we can negotiate a deal.
+
+> [!IMPORTANT]
+> This project is licensed under the [AGPL-3.0 license](https://github.com/dendotooo/proxy/blob/main/license).
 
 ### Usage
 
