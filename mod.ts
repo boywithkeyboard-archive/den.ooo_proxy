@@ -1,4 +1,4 @@
-import { decodeBase64 } from 'https://deno.land/std@0.204.0/encoding/base64.ts'
+import { decodeBase64 } from 'https://deno.land/std@0.208.0/encoding/base64.ts'
 import * as asciiArt from './asciiArt.ts'
 import { FileData, getFileFromRepository } from './getFileFromRepository.ts'
 import { getLatestVersion } from './getLatestVersion.ts'
